@@ -1,0 +1,423 @@
+\documentclass[12pt]{article}
+%\documentclass[a4paper,11pt]{article}
+
+
+%deklaracje pakietów
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{latexsym}
+\usepackage{eucal}
+\usepackage{listings}
+
+%pakiety z językiem polskim
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage[cp1250]{inputenc}
+\usepackage{t1enc}
+%ustawienia marginesów
+\textwidth=16cm \textheight=23cm \oddsidemargin=0.5cm
+\topmargin=-1cm
+
+\usepackage{graphicx}
+
+\renewcommand\baselinestretch{1.1}
+
+
+\DeclareMathOperator{\Q}{\mathbb{Q}}
+\def\R{\mathbb{R}}
+\def\N{\mathbb{N}}
+\def\CC{\mathcal{C}} % kaligraficzne C
+\def\FF{\mathcal{F}} % kaligraficzne F
+\def\MM{\mathcal{M}} % kaligraficzne M
+\def\NN{\mathcal{N}} % kaligraficzne N
+
+\newtheorem{tw}{Twierdzenie}
+\newtheorem{lem}{Lemat}
+\newtheorem{wn}{Wniosek}
+\newtheorem{fakt}{Fakt}
+\newtheorem{uw}{Uwaga}
+\newtheorem{defin}{Definicja}
+\newtheorem{prz}{Przykład}
+\newenvironment{dow}{\par \noindent \emph{Dowód.\ }}{\par\noindent\hfill$\Box$}
+
+
+
+\usepackage{xcolor}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{
+backgroundcolor=\color{backcolour},  
+commentstyle=\color{codegreen},
+keywordstyle=\color{magenta},
+numberstyle=\tiny\color{codegray},
+stringstyle=\color{codepurple},
+basicstyle=\ttfamily\footnotesize,
+breakatwhitespace=false,        
+breaklines=true,                
+captionpos=b,                    
+keepspaces=true,                
+numbers=left,                    
+numbersep=5pt,                  
+showspaces=false,                
+showstringspaces=false,
+showtabs=false,                  
+tabsize=2
+}
+\lstset{style=mystyle}
+\begin{document}
+ \begin{center}
+\LARGE{UNIWERSYTET GDAŃSKI}
+\end{center}
+
+\begin{center}
+\LARGE{WYDZIAŁ MATEMATYKI, FIZYKI I\\ INFORMATYKI}
+\end{center}
+
+
+\vspace{50mm}
+\begin{center}
+\Large{\textbf{Ewa Bojke}}\\ \vskip 4mm
+\large{MODELOWANIE MATEMATYCZNE \\I ANALIZA DANYCH}
+\vspace{10mm}
+
+
+
+\Huge\textbf{Metody i modele bayesowskie w \\ R Studio} 
+\end{center}
+
+\vspace{30mm}
+
+\begin{flushright}
+Projekt zaliczeniowy\\ 
+dr. Marta Frankowska 
+\end{flushright}
+\vspace{20mm}
+\begin{center}
+\textbf{Gdańsk 2022}
+\end{center}
+
+\newpage
+
+W tym projekcie zajmiemy się badaniem wpływu różnych czynników na to, czy dany pacjent przyjdzie na umówioną wizyte u lekarza, czy nie. Zastosujemy wnioskowanie bayesowskie aby się o tym przekonać.
+
+Wyświetlmy zbiór danych, jaki posiadamy:
+
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=150mm,height=50mm,scale=0.2]{1.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+
+Zmiennymi, które będą nas interesować to {\textbf{Show}}, {\textbf{SMS.received}}, {\textbf{Gender}}, {\textbf{Diabetes}}, {\textbf{Alcoholism}}, {\textbf{Age}}.
+\\
+\\
+\begin{center}
+	\begin{tabular}{ |c|c|c| } 
+		\hline
+		zmienna & opis   \\
+		\hline
+		$Gender$ & `F` jeśli kobieta, `M` jeśli mężczyzna  \\ 
+		$Age$ & wiek pacjenta  \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\begin{center}
+	\begin{tabular}{ |c|c|c|c| } 
+		\hline
+		zmienna & 1& 0\\
+		
+		\hline
+		$Show$ & pacjent pojawił się na wizycie & pacjent się nie pojawił  \\ 
+		$SMS.received$ & pacjent otrzymał wiadomość o wizycie & pacjent nie otrzymał \\
+		$Diabetes$ &  diabetyk & zdrowy  \\
+		$Alcoholism$ &  alkoholik &  zdrowy  \\
+		\hline
+	\end{tabular}
+\end{center}
+\bigskip
+Ogólnie, zastanówmy się nad tym, co tak naprawdę ma wpływ na przyjście pacjenta na wizytę. Czy to badanie doprowadzi nas do jakichś ciekawych wniosków? Przekonamy się o tym już za chwilę. Zacznijmy więc od tego, co już wiemy o danych. 
+\newpage
+\textbf{Formalny opis wnioskowania bayesowskiego:}\\
+
+\bigskip
+
+$\bullet$ x, jednostka obserwacji, może być to wektor,\\
+
+$\bullet$ $\theta$, parametr obserwacji tj. x $\sim$ p(x$\mid$  $\theta$ )\\
+
+$\bullet$ $\alpha$ , hiperparametr parametru, tj. $\theta$ $\sim$ p($\theta$ $\mid$ $\alpha$ ). Może to być wektor hiperparametrów.\\
+
+$\bullet$ $\mathbf {X}$ , zbiór $n$ jednostkowych obserwacji, tj. $x_{1}$,$\ldots$ ,$x_{n}$.
+\\
+
+
+\textbf{Rozkład a priori} to rozkład parametrów przyjęty przed zaobserwowaniem jakichkolwiek danych, tj. $\color {Red}$ p($\theta$ $\mid$ $\alpha$ ). Reprezentuje wiedzę z jaką badacz rozpoczyna badanie.
+
+\bigskip
+
+Wyznaczmy prawdopodobieństwo a priori, jeśli chodzi o przyjście na wizytę pacjenta, ponieważ chcemy zobaczyć jak rozkładają się dane (ile osób ogólnie przyszło do lekarza).
+
+
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=110mm,height=40mm,scale=0.01]{2.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\textbf{Wnioski:} Widzimy, że większośc naszych danych wskazuje na to, że prawie 80\% badanych przyszło do lekarza.
+\\
+
+\textbf{Rozkład z próby} to rozkład obserwacji, zależnych od ich parametrów, tj. ${\displaystyle {\color {NavyBlue}$ $p(\mathbf {X} \mid \theta )}.}$ Nazywa się go również wiarygodnością, szczególnie gdy rozpatruje się ją jako funkcję parametrów, tj. $\operatorname {L}$ ($\theta$ $\mid$ $\mathbf {X}$ ) $=$ p($\mathbf {X}$ $\mid$ $\theta$ ). Wyznaczmy rozkład wiarygodności zwracając uwagę, na to czy pacjent przyszedł do lekarza, ponieważ dostał SMSa o wizycie.
+
+\newpage
+Zobaczmy najpierw ile osób dostało SMSa o wizycie oraz ile z tych osób pojawiło się faktycznie na wizycie.
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=80mm,height=40mm,scale=0.01]{3.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\begin{center}
+\textbf{Obecność na wizycie a otrzymanie SMSa}
+\end{center}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[width=120mm,height=60mm,scale=0.4]{8.png}
+\label{fig:2}
+\end{center}
+\end{figure}
+\newpage
+Przyjrzyjmy się teraz wiarygodności:
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=120mm,height=60mm,scale=0.3]{wiary.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\textbf{Wnioski:} Wiarygodność wskazuję nam na duży odsetek (prawie 71\%) pacjentów, którzy nie otrzymali wiadomości o wizycie i przyszli na badanie. Ciekawe jest też to, że osób, które nie dostało SMSa i nieprzyszło na wizytę jest więcej od osób, które nieprzyszło i dostało SMSa o wizycie. Może więc, to czy ktoś dostałby z nieobecnych SMSa o wizycie zdecydowałoby, że jednak pojawili by się u lekarza. Trzeba się temu bardziej przyjrzeć.
+
+\\
+\bigskip
+
+Na potrzeby zadania obliczymy teraz rozkład łączny, który jest iloczynem obliczonej wcześniej wiarygodności i prawdopodobieństwa a priori. Rozkład łączny będzie nam potrzebny do obliczenia a posteriori, o którym zaraz wspomnimy.\\
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=110mm,height=50mm,scale=0.8]{laczny.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\newpage
+\textbf{Rozkład a posteriori} (in. wynikowy) to rozkład parametrów po uwzględnieniu zaobserwowanych danych. Jest określany przy pomocy twierdzenia Bayesa:
+
+$$p(\theta \mid \mathbf{X}, \alpha) = \frac{p(\mathbf{X} \mid \theta) p(\theta \mid \alpha) }{p(\mathbf{X} \mid \alpha)}, gdzie$$
+
+$p(\mathbf{X} \mid \alpha)$ to wiarygodność brzegowa dzięki, której możemy znormalizować nasze dane.
+\\
+\bigskip
+\\
+Jak wygląda rozkład brzegowy?
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=120mm,height=20mm,scale=0.5]{brzeg'.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\\
+Stąd, a posteriori wynosi:
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=100mm,height=50mm,scale=0.5]{6.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\textbf{Wnioski:}
+O dziwo wyszedł nam bardzo ciekawy przypadek, bowiem tak jak myśleliśmy na poczatku, że otrzymanie SMSa o wizycie(patrząc na osoby, które były nieobecne) może mieć jakiś wpływ na to, czy dany pacjent przyjdzie na wizytę, czy nie, to teraz widzimy, że nie ma to żadnego wpływu. Otóz większość pacjentów, którzy otrzymali SMSa o wizycie nie przyszło porównując do tych osób, którzy nie otrzymali SMSa i również nie przyszli. Ciekawym wnioskiem jest fakt, że wzrosło bardzo prawdopodobieństwo osób, które przyszły na wizytę i otrzymały SMSa. Wcześniej takie prawdopodobieństwo wynosiło niecałe 30\% a teraz prawie 73\%.
+\bigskip
+\\
+
+\newpage
+\begin{center}
+\textbf{Wykres a posteriori - SMS.received = 1}
+\end{center}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[width=120mm,height=60mm,scale=0.4]{9.png}
+\label{fig:2}
+\end{center}
+\end{figure}
+
+\begin{center}
+\textbf{Wykres a posteriori - SMS.received = 0}
+\end{center}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[width=120mm,height=60mm,scale=0.4]{10.png}
+\label{fig:2}
+\end{center}
+\end{figure}
+\newpage
+Zróbmy test i wiedząc jakie jest a priori, zrobimy symulacje z próbki 1000 osób i porównamy wyniki z naszymi danymi:
+
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=150mm,height=80mm,scale=0.4]{symu.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\begin{center}
+\textbf{Symulacje}
+\end{center}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[width=120mm,height=60mm,scale=0.4]{symul.png}
+\label{fig:2}
+\end{center}
+\end{figure}
+\textbf{Wnioski:} Możemy zauważyć, że symulacje wyszły bardzo podobnie do naszych danych, ponieważ większy odsetek jest ośób, które przyszły na badanie niż tych, które nie przyszły.
+
+\newpage
+Zbadamy teraz wpływ zmiennej $\textbf{Gender}$ na to, czy pacjent przyjdzie na wizytę, czy nie. Zobaczmy jak rozkłada się na wykresie a priori. Sprawdzimy jaka płeć częściej przychodzi na umówioną wizytę.\\
+
+A priori ze względu na płeć:
+
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=90mm,height=30mm,scale=0.2]{13.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\begin{center}
+\textbf{Obecność na wizycie a płeć}    
+\end{center}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[width=120mm,height=60mm,scale=0.2]{12.png}
+\label{fig:2}
+\end{center}
+\end{figure}
+
+\textbf{Wnioski:} Widzimy, że łączna ilośc badanych kobiet jest przeważająca nad ilością mężczyzn po pierwszych danych, dlatego wykres wyglądą w ten sposób, że jest więcej kobiet, które przyszły niż mężczyzn i więcej kobiet, które nie przyszły na badanie niż mężczyzn. A priori daje nam za mało informacji, dlatego musimy sprawdzić wiarygodność i wynik a posteriori.
+
+
+
+\newpage
+Wiarygodność i rozkład a posteriori wynosi:
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=100mm,height=40mm,scale=0.2]{11.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\\
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=100mm,height=30mm,scale=0.2]{show_M.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\begin{center}
+\textbf{Wykres a posteriori - mężczyźni}    
+\end{center}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[width=120mm,height=60mm,scale=0.2]{show_MM.png}
+\label{fig:2}
+\end{center}
+\end{figure}
+\newpage
+
+\\
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=100mm,height=30mm,scale=0.2]{show_S.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\begin{center}
+\textbf{Wykres a posteriori - kobiety}    
+\end{center}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[width=120mm,height=60mm,scale=0.2]{show_FF.png}
+\label{fig:2}
+\end{center}
+\end{figure}
+\textbf{Wnioski:} Po wstępnym pokazaniu a priori wydawało się, że to właśnie większość kobiet przychodzi na umówione wizyty, a  jednak po większej analizie i obliczeniu a posteriori, widzimy, że te prawopodobieństwa pojawienia się na wizycie kobiet i mężczyzn są bardzo podobne.
+
+
+\newpage
+Chcielibysmy zbadać jeszcze wpływ zmiennej $\textbf{Alcoholism}$ na to, czy pacjent przyjdzie na wizytę, czy nie. Zobaczmy jak rozkłada się na wykresie a priori. Zobaczymy czy uzależnienie ma wpływ na przyjście na wizyte u lekarza.\\
+
+A priori ze względu na zmienną alkohol:
+
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=90mm,height=30mm,scale=0.2]{alko1.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\begin{center}
+\textbf{Obecność na wizycie a alkoholizm}    
+\end{center}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[width=120mm,height=60mm,scale=0.2]{alko2.png}
+\label{fig:2}
+\end{center}
+\end{figure}
+
+\textbf{Wnioski:} Można zauważyć, że bardzo mało ludzi pod wpływem alkoholu przychodzi do lekarza, większość pacjentów jest trzeźwych.
+
+
+
+\newpage
+Wiarygodność i rozkład a posteriori wynosi:
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=70mm,height=30mm,scale=0.2]{alko3.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\\
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=100mm,height=30mm,scale=0.2]{show_alko1.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\begin{center}
+\textbf{Wykres a posteriori: alkohol = 1}    
+\end{center}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[width=120mm,height=60mm,scale=0.2]{show_alko11.png}
+\label{fig:2}
+\end{center}
+\end{figure}
+\newpage
+
+\\
+\begin{flushright}
+\begin{figure}[ht!]
+\includegraphics[width=100mm,height=30mm,scale=0.2]{show_alko0.png}
+\label{fig:2}
+\end{figure}
+\end{flushright}
+\begin{center}
+\textbf{Wykres a posteriori: alkohol= 0}    
+\end{center}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[width=120mm,height=60mm,scale=0.2]{show_alko11.png}
+\label{fig:2}
+\end{center}
+\end{figure}
+\textbf{Wnioski:} Po wstępnym pokazaniu a priori wydawało się, że to właśnie większość osób pod wpływem alkoholu nie przyjdzie na wizytę. Trzeźwi, którzy przyszli na wizytę to aż 80\% wszystkich trzeźwych, czyli około 20\% osób trzeźwych nie przyszło. Natomiast nietrzeżwych, którzy przyszli na wizytę to 80\% ze wszytskich nietrzeźwych, czyli 20\% osób nietrzeźwych nie przyszło na wizytę.
+
+\end{document}
